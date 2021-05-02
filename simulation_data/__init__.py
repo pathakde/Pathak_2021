@@ -4,6 +4,10 @@ import requests
 API = "ThisIsMyAPIKeyForIllustrisTNG"
 #defined get()
 def get(path, params=None):
+    '''
+    The oroginal version of this function can be found at
+    https://www.tng-project.org/data/docs/api/
+    '''
     # make HTTP GET request to path
     headers = {"api-key":API}
     r = requests.get(path, params=params, headers=headers)
