@@ -18,35 +18,49 @@ import scipy
 from scipy import stats
 
 
-
-
-
 def get_galaxy_particle_data(id, redshift, populate_dict=False):
-    """
-    input params: id==int(must exist in range, pre-check); z==redshift (num val); populate_dict=boolean, default value ==False
-    preconditions: depends on get(), a function, imported from simulation_data
-    output: if populate_dict == False: saves file 'cutout_'+str(id)+'_data.hdf5'
-    output: if populate_dict == True: saves file 'cutout_'+str(id)+'_data.hdf5'; returns dictionary with data (6 keys)
-    output dictionary keys: 'relative_x_coordinates' : #units: physical kpc
-                            'relative_y_coordinates' : #units: physical kpc
-                            'relative_z_coordinates' : #units: physical kpc
-                            'LookbackTime' : #units: Gyr
-                            'stellar_initial_masses' : #units: solar mass
-                            'stellar_masses' : #units: solar mass
-                            'stellar_metallicities' : #units: solar metallicity  
-                            'u_band' : #units: Vega magnitudes
-                            'v_band' : #units: Vega magnitudes
-                            'i_band' : #units: AB magnitudes
-                            'ParticleIDs' : #units: n/a
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (specific to simulation, pre-check at https://www.tng-project.org/data/) 
+        populate_dict: boolean: False does not load dictionary of particle data (default value)
+                                True loads dictionary of particle data
+    preconditions: 
+        requires get() imported from simulation_data.__init__
+    output params: 
+        checks if halo file exists. 
+        if the halo file does not exist, downloads, processes and saves relevant halo properties
+            if populate_dict == False: does not populate dictionary, no output
+            if populate_dict == True: returns dictionary with data (6 keys)
+                output dictionary keys: 'relative_x_coordinates' : x coordinates of star particles relative to the CM of the galaxy 
+                                                [units: physical kpc]
+                                        'relative_y_coordinates' : y coordinates of star particles relative to the CM of the galaxy 
+                                                [units: physical kpc]
+                                        'relative_z_coordinates' : z coordinates of star particles relative to the CM of the galaxy 
+                                                [units: physical kpc]
+                                        'LookbackTime' : age of star particle in lookback time
+                                                [units: Lookback time in Gyr]
+                                        'stellar_initial_masses' : initial stellar masses of star particles 
+                                                [units: solar mass]
+                                        'stellar_masses' : current stellar masses of star particles
+                                                [units: solar mass]
+                                        'stellar_metallicities' : current metallicities of star particles
+                                                [units: solar metallicity] 
+                                        'u_band' : rest-frame U band magnitude of star particles
+                                                [units: Vega magnitudes]
+                                        'v_band' : rest-frame V band magnitude of star particles
+                                                [units: Vega magnitudes]
+                                        'i_band' : rest-frame I band magnitude of star particles
+                                                [units: AB magnitudes]
+                                        'ParticleIDs': ids of star particles in simulation
+                                                [units: none]
+    '''
     stellar_data = {}
     import h5py
     import os
     import urllib
-    
     from pathlib import Path
     new_saved_filename = os.path.join('redshift_'+str(redshift)+'_data', 'cutout_'+str(id)+'_redshift_'+str(redshift)+'_data.hdf5')
-
 
     if Path('redshift_'+str(redshift)+'_data\cutout_'+str(id)+'_redshift_'+str(redshift)+'_data.hdf5').is_file():
         pass
@@ -68,7 +82,6 @@ def get_galaxy_particle_data(id, redshift, populate_dict=False):
             I = f['PartType4']['GFM_StellarPhotometrics'][:,6] #AB magnitudes
             ParticleIDs = f['PartType4']['ParticleIDs'][:]
 
-
         #selecting star particles only
         dx = dx[starFormationTime>0] #ckpc/h
         dy = dy[starFormationTime>0] #ckpc/h
@@ -81,8 +94,7 @@ def get_galaxy_particle_data(id, redshift, populate_dict=False):
         I = I[starFormationTime>0] #AB magnitudes
         ParticleIDs = ParticleIDs[starFormationTime>0]
         starFormationTime = starFormationTime[starFormationTime>0]
-        
-        
+               
         scale_factor = a = 1.0 / (1 + redshift)
         inv_sqrt_a = a**(-1/2)
         
@@ -143,7 +155,7 @@ def get_galaxy_particle_data(id, redshift, populate_dict=False):
                     'u_band' : U, #units: Vega magnitudes
                     'v_band' : V, #units: Vega magnitudes
                     'i_band' : I, #units: AB magnitudes
-                    'ParticleIDs' : ParticleIDs,
+                    'ParticleIDs' : ParticleIDs, #units: none
                     'stellar_masses': stellar_masses, #units: solar mass
                     }
                    
@@ -154,16 +166,25 @@ def get_galaxy_particle_data(id, redshift, populate_dict=False):
 
 
 def get_stellar_assembly_data(id, redshift=2, populate_dict=False):
-    """
-    adds data from Stellar Assembly Files
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: uses get() to access subhalo catalog
-                   stars_033.hdf5 for z=2 neccessary
-                   hard coded for z=2, not for other redshifts
-    with the following fields:::
-        ParticleID : The particle ID, in the same order as in the corresponding snapshot files.
-        MergerMassRatio : The stellar mass ratio of the merger in which a given ex-situ stellar particle was accreted (if applicable). The mass ratio is measured at the time when the secondary progenitor reaches its maximum stellar mass. NOTE: this quantity was calculated also in the case of flybys, without a merger actually happening.
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+        populate_dict: boolean: False does not load dictionary of particle data (default value)
+                                True loads dictionary of particle data
+    preconditions: 
+        requires get() imported from simulation_data.__init__
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+        requires external stellar assembly files for target redshifts
+    output params:
+        adds data from Stellar Assembly Files
+        checks if 'MergerMassRatio' exists in halo file. if key doesn't exist, saves merger mass ratio data
+            if populate_dict == False: no output
+            if populate_dict == True: returns 'MergerMassRatio': 
+                    The stellar mass ratio of the merger in which a given ex-situ stellar particle was accreted (if applicable). 
+                    The mass ratio is measured at the time when the secondary progenitor reaches its maximum stellar mass. 
+                    NOTE: this quantity was calculated also in the case of flybys, without a merger actually happening.
+    '''
     #open Stellar Assembly data file for z=2
     import h5py
     import os
@@ -195,12 +216,24 @@ def get_stellar_assembly_data(id, redshift=2, populate_dict=False):
 
 
 def get_star_formation_history(id, redshift, plot=False, binwidth=0.05): 
-    """
-    input params: id==int(must exist in range, pre-check); redshift==numerical-val; plot=="True" or "False"
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: (plot=False): (SFH, BE): SFH=StellarFormationHistory, units: $M_\odot$;  BE=BinEdges, units: Gyr
-    output: (plot=True): plt.hist (SFH, BE)
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+        plot: boolean: False does not return a line plot
+                       True returns a line plot of the star formation history of the target galaxy
+        binwidth: width of linear age bin for computing SFH
+                [units: Gyr]
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params: 
+        if plot==False: bin centers: centers of age bins used to construct SFH
+                            [units: Gyr]
+                        SFH: stellar mass in each age bin
+                            [units: solar masses]
+        if plot==True: line plot of normalized SFH
+                            [plt.plot(bincenters, SFH/np.sum(SFH))]
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     HistWeights = stellar_data['stellar_initial_masses']
     #HistWeights = stellar_data['stellar_initial_masses']/(binwidth*1e9) #units: logMsol/yr
@@ -212,23 +245,33 @@ def get_star_formation_history(id, redshift, plot=False, binwidth=0.05):
         return bincenters, SFH
     else:     
         plt.figure(figsize=(10,7))
-        plt.step(bincenters, SFH/np.sum(SFH), color = 'b')
+        plt.plot(bincenters, SFH/np.sum(SFH), color = 'b')
         plt.title('Histogram for Lookback Times for id = ' + str(id))
         plt.xlim(0, )
         plt.ylim(0, )
         plt.xlabel("Lookback Time (Gyr)")
         plt.ylabel("$M_\odot$/yr")
-        plt.show()
         return plt.show()
 
     
     
 def timeaverage_stellar_formation_rate(id, redshift, timescale, start=0, binwidth=0.05):
-    """
-    input params: redshift=redshift(num val); id==int(must exist in range, pre-check); timescale=num val in range(LT) in units of Gyr; start=num val in range(LT) in units of Gyr, default value == 0
-    preconditions: depends on get_stellar_formation_history(redshift = redshift, id = id, plot=False) output; first array BC=bincenters & second array SFH=star formation histories
-    output: average stellar formation rate over a specified timescale, units: $M_\odot$ /yr
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+        timescale: length of time window for over which average SFR is calculated
+                [units: Gyr]
+        start: minimum lookback to which timescale is is added to get time window for calculating average SFR (default 0)
+                [units: Lookback time in Gyr]
+        binwidth: width of linear age bin for computing SFR (default 0.05 Gyr)
+                [units: Gyr]
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params:
+        average SFR: average star formation rate over a specified timescale 
+                [units: solar mass/year] 
+    '''
     BC, SFH = get_star_formation_history(redshift = redshift, id = id, plot=False, binwidth=binwidth)
     timescale_indices = np.where((np.array(BC)<=start+timescale+BC[0])&(np.array(BC)>=start)) 
     TimeAvg_SFR = np.sum([SFH[i] for i in timescale_indices]) / len(timescale_indices[0])
@@ -238,11 +281,16 @@ def timeaverage_stellar_formation_rate(id, redshift, timescale, start=0, binwidt
 
 
 def current_star_formation_rate(id, redshift):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: uses get() to access subhalo catalog
-    output: current SFR, units: $M_\odot$ /yr
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+    preconditions: 
+        requires get() imported from simulation_data.__init__
+    output params:
+        current SFR: current star formation rate read from available halo properties 
+                [units: solar mass/year] 
+    '''
     url = "http://www.tng-project.org/api/TNG100-1/snapshots/z=" + str(redshift) + "/subhalos/" + str(id)
     sub = get(url) # get json response of subhalo properties
     return sub['sfr']
@@ -251,11 +299,16 @@ def current_star_formation_rate(id, redshift):
 
 
 def median_stellar_age(id, redshift):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: median stellar age, units: Gyr
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params:
+        median stellar age: median age of star particles in target galaxy 
+                [units: Lookback time in Gyr] 
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     LookbackTime = stellar_data['LookbackTime']
     return np.median(LookbackTime) #units: Gyr in Lookback time
@@ -263,11 +316,16 @@ def median_stellar_age(id, redshift):
 
 
 def mean_stellar_metallicity(id, redshift):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: mean stellar metallicity, units: solar metallicity
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params:
+        mean stellar metallicity: mean metallicity of star particles in target galaxy 
+                [units: solar metallicity] 
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     stellar_metallicities = stellar_data['stellar_metallicities']    
     return np.mean(stellar_metallicities)
@@ -275,11 +333,16 @@ def mean_stellar_metallicity(id, redshift):
 
 
 def total_stellar_mass(id, redshift):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: uses get() to access subhalo catalog
-    output: total stellar mass, units: log10 solar masses
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+    preconditions: 
+        requires get() imported from simulation_data.__init__
+    output params:
+        total stellar mass: total stellar mass of target galaxy read from available halo properties 
+                [units: log10 solar masses] 
+    '''
     url = "http://www.tng-project.org/api/TNG100-1/snapshots/z=" + str(redshift) + "/subhalos/" + str(id)
     sub = get(url) # get json response of subhalo properties
     return np.log10(sub['mass_stars']*1e10/h)
@@ -287,28 +350,47 @@ def total_stellar_mass(id, redshift):
 
 
 def halfmass_rad_stars(id, redshift):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val)
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: half-mass radius of all stellar particles, units: physical kpc
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/) 
+    preconditions: 
+        requires get() imported from simulation_data.__init__
+    output params:
+        half-mass radius: half-mass radius of target galaxy read from available halo properties 
+                [units: physical kpc] 
+    '''
     scale_factor = a = 1.0 / (1 + redshift)
     url = "http://www.tng-project.org/api/TNG100-1/snapshots/z=" + str(redshift) + "/subhalos/" + str(id)
     sub = get(url) # get json response of subhalo properties
-    return sub['halfmassrad_stars']*a/h
+    return sub['halfmassrad_stars']*a/h #units: pkpc
 
 
 
 def halflight_rad_stars(id, redshift, band, bound=0.5):
-    """
-    input params: redshift=redshift(num val); id==int(must exist in range, pre-check); band==['U'(Vega magnitude), bound==(0, 1)
-                                                                                              'V'(Vega magnitude), 
-                                                                                              'I'(AB magnitude),
-                                                                                              'M'(solM) == (test)]
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-                   band must be == 'U'/'V'/'I'/'M'==mass-test
-    output: half-light radius of a galaxy for a given band (U/V/I) in pkpc or half-mass-rad
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/)
+        band: choice of photometric band or mass to calculate effective size in: string
+                'U': (Vega magnitude) 
+                'V': (Vega magnitude) 
+                'I': (AB magnitude)
+                'M': (solar masses)
+        bound: target fraction of quantity (light intensity, mass) enclosed to calculate radius (default 0.5: for half-light radius)
+                [range (0, 1]]
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params:
+        'U': radius enclosing central $bound fraction of U-band intensity 
+                [physical kpc] 
+        'V': radius enclosing central $bound fraction of V-band intensity 
+                [physical kpc] 
+        'I': radius enclosing central $bound fraction of I-band intensity 
+                [physical kpc]
+        'M': radius enclosing central $bound fraction of stellar mass
+                [physical kpc]
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     dx = stellar_data['relative_x_coordinates']
     dy = stellar_data['relative_y_coordinates']
@@ -367,13 +449,25 @@ def halflight_rad_stars(id, redshift, band, bound=0.5):
 
 
 def age_profile(id, redshift, n_bins=20, scatter=False):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val); n_bins==int(num of bins for percentile-count stellar particle partition, default value = 20)
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: statistic = median ages of binned stellar particles (units: Gyr); 
-            percentile cutoffs for radial distances =  radial_percentiles[1:] = percentile bin-edges for  radial distance of stellar particle from subhalo center (unitless); 
-            R_e = effective (median) radius of stellar particles in subhalo (units: physical kpc)
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/)  
+        n_bins: number of percentile age bins for constructing age profile, default 20 bins
+                [units: none]
+        scatter: boolean: False returns binned radial age data in arrays, does not return a scatter plot with raw particle data
+                          True returns a scatter plot of raw particle data overlaid with a lineplot of age profile of the target galaxy
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params: 
+        if plot==False: statistic: array of median stellar age in each age bin
+                            [units: Lookback time in Gyr]
+                        radial percentiles: array of radial percentiles
+                            [units: physical kpc]
+                        R_e: half-mass or effective radius of target galaxy
+                            [units: physical kpc]
+        if plot==True: scatter plot with raw particle data overlaid with a lineplot of age profile of the target galaxy
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     LookbackTime = stellar_data['LookbackTime']
     dx = stellar_data['relative_x_coordinates']
@@ -389,8 +483,8 @@ def age_profile(id, redshift, n_bins=20, scatter=False):
     statistic, bin_edges, bin_number = scipy.stats.binned_statistic(R, LookbackTime, 'median', bins=radial_percentiles)
     
     if scatter==False:
-        return statistic, radial_percentiles[:-1], R_e, R/R_e, LookbackTime, np.log10(metallicity)
-        #return statistic, radial_percentiles[:-1]/R_e, R_e, R/R_e, LookbackTime, np.log10(metallicity)
+        return statistic, radial_percentiles[:-1], R_e#, R/R_e, LookbackTime, np.log10(metallicity)
+        
     else:
         plt.figure(figsize=(10,7)) # 10 is width, 7 is height
         plt.scatter(R/R_e, LookbackTime, c=np.log10(metallicity), s=0.5, alpha=0.7)#c=np.log10(metallicity)
@@ -411,13 +505,25 @@ def age_profile(id, redshift, n_bins=20, scatter=False):
     
     
 def metallicity_profile(id, redshift, n_bins=20, scatter=False):
-    """
-    input params: id==int(must exist in range, pre-check); redshift=redshift (num val); n_bins==int(num of bins for percentile-count stellar particle partition, default value = 20)
-    preconditions: depends on get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True) output
-    output: statistic = median metallicities of binned stellar particles (units: log10zsol); 
-            percentile cutoffs for radial distances =  radial_percentiles[1:]/R_e = percentile bin-edges for normalized radial distance of stellar particle from subhalo center (unitless); 
-            R_e = effective (median) radius of stellar particles in subhalo (units: physical kpc)
-    """
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/)  
+        n_bins: number of percentile age bins for constructing age profile, default 20 bins
+                [units: none]
+        scatter: boolean: False returns binned radial age data in arrays, does not return a scatter plot with raw particle data
+                          True returns a scatter plot of raw particle data overlaid with a lineplot of metallicity profile of the target galaxy
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params: 
+        if plot==False: statistic: array of median stellar metallicity in each age bin
+                            [units: solar metallicity]
+                        radial percentiles: array of radial percentiles
+                            [units: physical kpc]
+                        R_e: half-mass or effective radius of target galaxy
+                            [units: physical kpc]
+        if plot==True: scatter plot with raw particle data overlaid with a lineplot of metallicity profile of the target galaxy
+    '''
     stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
     LookbackTime = stellar_data['LookbackTime']
     dx = stellar_data['relative_x_coordinates']
@@ -433,7 +539,7 @@ def metallicity_profile(id, redshift, n_bins=20, scatter=False):
     statistic, bin_edges, bin_number = scipy.stats.binned_statistic(R, metallicity, 'median', bins=radial_percentiles)
     
     if scatter==False:
-        return statistic, radial_percentiles[:-1]/R_e, R_e 
+        return statistic, radial_percentiles[:-1], R_e 
     else:
         plt.figure(figsize=(10,7)) # 10 is width, 7 is height
         plt.scatter(R/R_e, metallicity, s=2, alpha=0.05)#c=np.log10(LookbackTime)
@@ -451,8 +557,20 @@ def metallicity_profile(id, redshift, n_bins=20, scatter=False):
 
 
 
-def max_merger_ratio(id, redshift, scale=30):
-
+def max_merger_ratio(id, redshift=2, scale=30):
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/)  
+        scale: the radial distance up to which star partickes should be considered as part of the target galaxy (default 30 kpc)
+                [units: physical kpc]
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+        requires output from get_stellar_assembly_data(id, redshift, populate_dict=True): assembly data must exist
+    output params: 
+        greatest merger contribution: the largest fraction of current stellar mass within $scale [kpc] that can be traced back to a single merger event
+                [units: none, fraction of total stellar mass within $scale [kpc] from galaxy CM]
+    '''
     MergerMassRatio = get_stellar_assembly_data(id=id, redshift=redshift, populate_dict=True)
     stellar_data = get_galaxy_particle_data(id=id, redshift=redshift, populate_dict=True)
     dx = stellar_data['relative_x_coordinates']
