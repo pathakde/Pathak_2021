@@ -1,7 +1,8 @@
 # Quenching, Mergers and Age Profiles for z=2 Galaxies in IllustrisTNG
 
-In this repository, you can find some resources for streamlining your analysis of IllustrisTNG data. 
-We provide detailed instructions to download and use IllustrisTNG data to generate all five figures from the paper [insert link].
+In this repository, you can find resources to replicate the analysis of IllustrisTNG data presented in Pathak et al. (2021) [insert link].
+
+We also provide some resources for streamlining your analysis of relevant IllustrisTNG data with detailed instructions to download and process this data.
 
 <br />
 
