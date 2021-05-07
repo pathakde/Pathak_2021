@@ -1,6 +1,6 @@
 # Quenching, Mergers and Age Profiles for z=2 Galaxies in IllustrisTNG
 
-In this repository, you can find resources to replicate the analysis of IllustrisTNG data presented in Pathak et al. (2021) [insert link].
+In this repository, you can find resources to replicate the analysis of IllustrisTNG data presented in Pathak et al. (2021) https://arxiv.org/abs/2105.02234.
 
 We also provide some resources for streamlining your analysis of relevant IllustrisTNG data with detailed instructions to download and process this data.
 
@@ -24,7 +24,7 @@ This notebook also provides instructions for storing data on individual galaxies
 ## 3. Run the notebook titled `Figures.ipynb`.
 
 This notebook analyzes the data that was downloaded and processed in `Data_Acquisition.ipynb`. 
-This notebook will help you generate all five figures from the paper [insert link].
+This notebook will help you generate all five figures from the paper https://arxiv.org/abs/2105.02234.
 
 <br />
 
