@@ -297,6 +297,28 @@ def current_star_formation_rate(id, redshift):
 
 
 
+def mean_stellar_age(id, redshift, weights=False):
+    '''
+    input params: 
+        id: the simulation id of target galaxy: integer (specific to simulation, pre-check) 
+        redshift: redshift of target galaxy: numerical value (default==2, specific to simulation, pre-check at https://www.tng-project.org/data/)
+        weights: when True: returns mass-weighted average age
+                 when False: returns average age (default)
+    preconditions: 
+        requires output from get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+    output params:
+        mean stellar age: mean age of star particles in target galaxy (weighted by current stellar mass if weights=True)
+                [units: Lookback time in Gyr] 
+    '''
+    stellar_data = get_galaxy_particle_data(id=id , redshift=redshift, populate_dict=True)
+    LookbackTime = stellar_data['LookbackTime']
+    if weights==False:
+        return np.average(LookbackTime)
+    else:
+        mass = stellar_data['stellar_masses']
+        return np.average(LookbackTime, weights=mass)
+
+
 
 def median_stellar_age(id, redshift):
     '''

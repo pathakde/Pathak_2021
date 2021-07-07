@@ -7,7 +7,7 @@ import requests
 #import get()
 from simulation_data import get
 
-from .galaxy import timeaverage_stellar_formation_rate, median_stellar_age, total_stellar_mass, halfmass_rad_stars, halflight_rad_stars, max_merger_ratio
+from .galaxy import timeaverage_stellar_formation_rate, mean_stellar_age, median_stellar_age, total_stellar_mass, halfmass_rad_stars, halflight_rad_stars, max_merger_ratio
 
 class GalaxyPopulation():
     
@@ -99,7 +99,7 @@ class GalaxyPopulation():
             with h5py.File('galaxy_population_data_'+str(self.redshift)+'.hdf5', 'a') as f:
                 #writing data
                 d1 = f.create_dataset('ids', data = self.select_galaxies(redshift=redshift, mass_min=10.5, mass_max=12))
-                d2 = f.create_dataset('median_age', data = self.get_median_stellar_age())
+                d2 = f.create_dataset('mean_age', data = self.get_mean_stellar_age(weights=False))
                 d3 = f.create_dataset('halfmass_radius', data = self.get_halfmass_rad_stars())
                 d4 = f.create_dataset('total_mass', data = self.get_total_stellar_mass())
                 d5 = f.create_dataset('halflight_radius_U', data = self.get_halflight_rad_stars(band='U', bound=0.5))
@@ -107,10 +107,12 @@ class GalaxyPopulation():
                 d7 = f.create_dataset('halflight_radius_I', data = self.get_halflight_rad_stars(band='I', bound=0.5))
                 d8 = f.create_dataset('newbin_current_SFR', data = self.get_timeaverage_stellar_formation_rate(timescale=0, binwidth=0.01))
                 d9 = f.create_dataset('maximum_merger_ratio_30kpc_current_fraction', data = self.get_max_merger_ratio(scale=30))
+                d10 = f.create_dataset('mean_age_massweighted', data = self.get_mean_stellar_age(weights=True))
                 
         with h5py.File('galaxy_population_data_'+str(self.redshift)+'.hdf5', 'r') as f:
             ids = f['ids'][:]
-            median_age = f['median_age'][:]
+            mean_age = f['mean_age'][:]
+            mean_age_massweighted = f['mean_age_massweighted'][:]
             halfmass_radius = f['halfmass_radius'][:]
             total_mass = f['total_mass'][:]
             halflight_radius_U = f['halflight_radius_U'][:]
@@ -121,7 +123,8 @@ class GalaxyPopulation():
 
         galaxy_population_data = {
                                     'ids': ids,
-                                    'median_age': median_age,
+                                    'mean_age': mean_age,
+                                    'mean_age_massweighted': mean_age_massweighted,
                                     'halfmass_radius': halfmass_radius,
                                     'total_mass': total_mass,
                                     'halflight_radius_U': halflight_radius_U,
@@ -188,6 +191,49 @@ class GalaxyPopulation():
             return self.calc_timeaverage_stellar_formation_rate(calc_timescale=timescale, calc_start=start, calc_binwidth=binwidth)
             
     
+    
+    #mean stellar age
+    def calc_mean_stellar_age(self, calc_weights=False):
+        '''
+        input params: 
+            calc_weights: When True: returns mass-weighted mean stellar age
+                          When False: returns mean stellar age (default) 
+        preconditions:
+            requires initialization with self.select_galaxies(redshift=redshift, mass_min=10.5, mass_max=12)
+            requires galaxy.mean_stellar_age(id, redshift)
+            requires output from galaxy.get_galaxy_particle_data(id, redshift, populate_dict=True): halo file must exist
+        output params:
+            mean stellar age: an array of mean stellar ages of galaxies in selection (mass-weighted mean ages if weights=True) 
+                    [units: Lookback time in Gyr] 
+        '''
+        ids = self.ids
+        means = np.zeros(len(ids))
+        for i, id in enumerate(ids): 
+            means[i] = mean_stellar_age(redshift = self.redshift, id = id, weights=True)
+        if calc_weights==False:
+            filename='z='+str(self.redshift)+'_Mean_SFT'
+        else:
+            filename='z='+str(self.redshift)+'_Mean_massweighted_SFT'
+        #save file
+        np.savetxt(filename, means)
+        mean_SFT = np.loadtxt(filename, dtype=float)
+        return mean_SFT
+    
+    
+    def get_mean_stellar_age(self, weights=False): 
+        import pathlib
+        if weights==False:
+            filename='z='+str(self.redshift)+'_Mean_SFT'
+        else:
+            filename='z='+str(self.redshift)+'_Mean_massweighted_SFT'
+        file = pathlib.Path(filename)
+        if file.exists ():
+            MeanSFT = np.loadtxt(filename, dtype=float) #rename pre-existing files before parameterizing further
+            return MeanSFT
+        else:
+            return self.calc_mean_stellar_age(calc_weights=weights)
+        
+        
 
     #median stellar age
     def calc_median_stellar_age(self):
@@ -235,7 +281,7 @@ class GalaxyPopulation():
     
 
         
-        #total stellar mass
+    #total stellar mass
     def calc_total_stellar_mass(self):
         '''
         input params: 
@@ -281,7 +327,7 @@ class GalaxyPopulation():
         
         
         
-        #half mass radius
+    #half mass radius
     def calc_halfmass_rad_stars(self):
         '''
         input params: 
