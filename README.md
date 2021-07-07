@@ -2,7 +2,9 @@
 
 In this repository, you can find resources to replicate the analysis of IllustrisTNG data presented in Pathak et al. (2021) https://arxiv.org/abs/2105.02234.
 
-We also provide some resources for streamlining your analysis of relevant IllustrisTNG data with detailed instructions to download and process this data.
+We also include two additional figure to complement the results presented in Pathak et al. (2020), and to facilitate further discussion.
+
+We also provide some resources for streamlining your analysis of relevant IllustrisTNG data with detailed instructions to download and process this data. Scroll to the bottom of `Figures.ipynb` and look under **Extras** to view the additional figures.
 
 ## Note: Selected Suess et al. (2020) data included:
 Some processed data from Suess et al. (2020) has been included in `Suess2020_data.hdf5` for reproducing the comparisons with observations in Figure 2. A huge thank you to **Wren Suess** for sharing her data! You can find her paper at https://iopscience.iop.org/article/10.3847/2041-8213/abacc9 (arXiv: https://arxiv.org/abs/2008.02817).
