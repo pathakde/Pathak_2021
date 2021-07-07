@@ -6,6 +6,9 @@ We also provide some resources for streamlining your analysis of relevant Illust
 
 We include **two additional figures** to complement the results presented in Pathak et al. (2020), and to facilitate further discussion. Scroll to the bottom of `Figures.ipynb` and look under **Extras** to view the new figures.
 
+## Quick Take: Preview Code and Results
+
+For a quick view, we include compiled and rendered `.HTML` previews of both Jupyter Notebooks in `preview_analysis` that only require a working browser to open and browse.
 
 <br />
 
@@ -29,7 +32,7 @@ This notebook also provides instructions for storing data on individual galaxies
 ## 3. Run the notebook titled `Figures.ipynb`.
 
 This notebook analyzes the data that was downloaded and processed in `Data_Acquisition.ipynb`. 
-This notebook will help you generate all five figures from the paper https://arxiv.org/abs/2105.02234.
+This notebook will help you generate all five figures from [Pathak et al. (2021)](https://arxiv.org/abs/2105.02234).
 
 <br />
 
