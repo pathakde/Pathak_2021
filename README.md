@@ -4,7 +4,12 @@ In this repository, you can find resources to replicate the analysis of Illustri
 
 We also provide some resources for streamlining your analysis of relevant IllustrisTNG data with detailed instructions to download and process this data.
 
+## Note: Selected Suess et al. (2020) data included:
+Some processed data from Suess et al. (2020) has been included in `Suess2020_data.hdf5` for reproducing the comparisons with observations in Figure 2. A huge thank you to **Wren Suess** for sharing her data! You can find her paper at https://iopscience.iop.org/article/10.3847/2041-8213/abacc9 (arXiv: https://arxiv.org/abs/2008.02817).
+
 <br />
+
+# Getting Started:
 
 ## 1. Download all code and data included in the repository.
 
